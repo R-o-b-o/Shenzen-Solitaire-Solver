@@ -1,6 +1,7 @@
 import pyautogui
 import pytesseract
 import numpy as np
+from collections import deque 
 from PIL import Image, ImageGrab, ImageDraw
 
 
@@ -100,7 +101,7 @@ def get_board_im_list(screengrab):
 def get_board_from_screengrab(screengrab):
     board = []
     for i in range(8):
-        col = []
+        col = deque()
         coords = starting_coords + np.array((x_offset*i,0))
 
         while True:
@@ -111,11 +112,43 @@ def get_board_from_screengrab(screengrab):
 
 
             symbol = get_symbol_col_from_im(square_im)
-            col.append(symbol)
+            col.appendleft(symbol)
             coords = (coords[0], coords[1]+y_offset)
 
         board.append(col)
     return board
+
+def can_place_over(symbol_top, symbol_bottom):
+    if any(i in ("D", "R") for i in (symbol_top[0], symbol_bottom[0])):
+        return False
+    return symbol_top[1] != symbol_bottom[1] and int(symbol_top[0]) == int(symbol_bottom[0]) - 1
+
+def get_possible_moves(board):
+    moves_possible = []
+    for col_num, col in enumerate(board):
+        card_index = 0
+        while True:
+            for i in range(1,8):
+                other_col_num = (col_num+i)%8
+                if can_place_over(col[card_index], board[other_col_num][0]):
+                    moves_possible.append((col_num, other_col_num, card_index+1))
+
+            card_index += 1
+            if not can_place_over(col[card_index], col[card_index-1]):
+                break
+    return moves_possible
+
+def perform_move(move, board):
+    moved_card_list =  []
+
+    col1, col2, num_cards = move
+
+    for _ in range(num_cards):
+        moved_card_list.append(board[col1].popleft())
+
+    for card in reversed(moved_card_list):
+        board[col2].appendleft(card)
+
 
 
 
@@ -128,6 +161,10 @@ if __name__ == "__main__":
     screengrab = get_screengrab()
 
     board = get_board_from_screengrab(screengrab)
+    # test = get_possible_moves(board)
+
+    # perform_move((0,7,2), board)
+
     # board_im_list = get_board_im_list(screengrab)
 
     # # show_board(board_im_list)

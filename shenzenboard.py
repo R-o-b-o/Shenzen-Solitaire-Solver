@@ -11,13 +11,14 @@ class Board:
         self._x_offset = 152
         self._y_offset = 31
 
+        self.discard_cells = [None, None, None]
         self.card_array = self._get_card_array_from_screengrab(screengrab)
 
     def get_possible_moves(self, board):
         moves_possible = []
         for col_num, col in enumerate(board):
             card_index = 0
-            while True:
+            while card_index < 8:
                 for i in range(1,8):
                     other_col_num = (col_num+i)%8
                     if self._can_place_over(col[card_index], board[other_col_num][0]):
@@ -39,6 +40,8 @@ class Board:
         for card in reversed(moved_card_list):
             board[col2].appendleft(card)
 
+        self._discard_free_cards()
+
     def _get_card_array_from_screengrab(self, screengrab):
         card_array = []
         for i in range(8):
@@ -57,7 +60,19 @@ class Board:
                 coords = (coords[0], coords[1]+self._y_offset)
 
             card_array.append(col)
+        self._discard_free_cards()
         return card_array
+
+    def _discard_free_cards(self):
+        for i in range(8):
+            num_tmp, col_tmp = self.card_array[i][0]
+
+            if num_tmp == "R":
+                self.card_array[i].popleft()
+
+            elif self.discard_cells[col_tmp] + 1 == num_tmp:
+                self.card_array[i].popleft()
+                self.discard_cells[col_tmp] += 1
 
     def _get_symbol_col_from_im(self, symbol_im):
         col = self._recognize_symbol_col(symbol_im)

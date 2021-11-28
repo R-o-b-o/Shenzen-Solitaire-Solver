@@ -2,7 +2,7 @@
 # import pytesseract
 # import numpy as np
 # from collections import deque 
-# from PIL import Image, ImageGrab, ImageDraw
+from PIL import Image, ImageGrab, ImageDraw
 
 from shenzenboard import Board
    

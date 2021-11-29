@@ -12,6 +12,7 @@ class Board:
         self._y_offset = 31
 
         self.free_cells = []
+        self.free_cells_size = 3
         self.discard_cells = [0, 0, 0]
         self.card_array = self._get_card_array_from_screengrab(screengrab)
 
@@ -35,7 +36,7 @@ class Board:
                     if self._can_place_over(self.free_cells[i], self.card_array[j][0]):
                         moves_possible.append((-i-1, j, 1))
 
-        if len(self.free_cells) < 3:
+        if len(self.free_cells) < self.free_cells_size:
             for i in range(8):
                 moves_possible.append((i, -len(self.free_cells)-1, 1))
 
@@ -80,6 +81,7 @@ class Board:
 
             card_array.append(col)
         self._discard_free_cards()
+        self._clear_free_dragons()
         return card_array
 
     def _discard_free_cards(self):
@@ -92,6 +94,30 @@ class Board:
             elif self.discard_cells[col_tmp] + 1 == num_tmp:
                 self.card_array[i].popleft()
                 self.discard_cells[col_tmp] += 1
+    
+    def _clear_free_dragons(self):
+        dragon_counts = [-1, -1, -1]
+
+        if len(self.free_cells) < self.free_cells_size:
+            dragon_counts = [0, 0, 0]
+        else:
+            for card in self.free_cells:
+                if card[0] == "D":
+                    dragon_counts[card[1]] += 2 if dragon_counts[card[1]] == -1 else 1
+
+        for col in self.card_array:
+            if col[0][0] == "D":
+                dragon_counts[col[0][1]] += 1
+        
+        for i in range(dragon_counts):
+            if dragon_counts[i] == 4:
+                for col in self.card_array:
+                    if col[0]== ("D", i):
+                        del col[0]
+                for j in range(len(self.free_cells)):
+                    self.free_cells.remove(("D", i))
+
+                self.free_cells_size -= 1
 
     def _get_symbol_col_from_im(self, symbol_im):
         col = self._recognize_symbol_col(symbol_im)

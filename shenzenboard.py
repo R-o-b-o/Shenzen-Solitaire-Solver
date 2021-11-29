@@ -11,34 +11,53 @@ class Board:
         self._x_offset = 152
         self._y_offset = 31
 
-        self.discard_cells = [None, None, None]
+        self.free_cells = []
+        self.discard_cells = [0, 0, 0]
         self.card_array = self._get_card_array_from_screengrab(screengrab)
 
-    def get_possible_moves(self, board):
+    def get_possible_moves(self):
         moves_possible = []
-        for col_num, col in enumerate(board):
+        for col_num, col in enumerate(self.card_array):
             card_index = 0
             while card_index < 8:
                 for i in range(1,8):
                     other_col_num = (col_num+i)%8
-                    if self._can_place_over(col[card_index], board[other_col_num][0]):
+                    if self._can_place_over(col[card_index], self.card_array[other_col_num][0]):
                         moves_possible.append((col_num, other_col_num, card_index+1))
 
                 card_index += 1
                 if not self._can_place_over(col[card_index], col[card_index-1]):
                     break
+
+        if len(self.free_cells) > 0:
+            for i in range(len(self.free_cells)):
+                for j in range(8):
+                    if self._can_place_over(self.free_cells[i], self.card_array[j][0]):
+                        moves_possible.append((-i-1, j, 1))
+
+        if len(self.free_cells) < 3:
+            for i in range(8):
+                moves_possible.append((i, -len(self.free_cells)-1, 1))
+
         return moves_possible
 
-    def perform_move(self, move, board):
+    def perform_move(self, move):
         moved_card_list =  []
 
         col1, col2, num_cards = move
 
-        for _ in range(num_cards):
-            moved_card_list.append(board[col1].popleft())
+        if col1 < 0:
+            col1 = -(col1 + 1)
+            self.card_array[col2].appendleft(self.free_cells[col1])
+            del self.free_cells[col1]
+        elif col2 < 0:
+            self.free_cells.append(self.card_array[col1].popleft())
+        else:
+            for _ in range(num_cards):
+                moved_card_list.append(self.card_array[col1].popleft())
 
-        for card in reversed(moved_card_list):
-            board[col2].appendleft(card)
+            for card in reversed(moved_card_list):
+                self.card_array[col2].appendleft(card)
 
         self._discard_free_cards()
 
